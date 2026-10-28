@@ -212,7 +212,7 @@ function rule2(input: InvestigationInput, now: Date): RuleResult {
     explanation: `Joint representation requires ${j.group.map((g) => g.name).join(" and ")} to act together. The request was submitted by ${submitters.join(", ")} only, and no joint authorization evidence was provided.`,
     supportingData: supporting,
     nextStep: "Hold for manual review and request a joint authorization signed by all required administrators.",
-    missingItems: [`Joint authorization signed by ${j.missing.map((m) => m.name).join(", ")}`],
+    missingItems: [], // reported once by R6 (missing evidence)
   };
 }
 
