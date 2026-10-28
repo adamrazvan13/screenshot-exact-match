@@ -20,6 +20,7 @@ export function DocumentExtractor({ current, onApply }: Props) {
   const [result, setResult] = useState<{ summary: string[]; warnings: string[] } | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfName, setPdfName] = useState("");
+  const [dragOver, setDragOver] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const upload = async (file: File) => {
