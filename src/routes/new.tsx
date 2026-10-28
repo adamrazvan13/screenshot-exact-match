@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Play } from "lucide-react";
+import { Plus, Trash2, Play, Database } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/signright/AppShell";
 import { DocumentExtractor } from "@/components/signright/DocumentExtractor";
 import { RegistryLookup } from "@/components/signright/RegistryLookup";
 import { Btn, Card, Field } from "@/components/signright/ui";
+import { applyBankRecords, bankLookupAvailable, fetchBankClient } from "@/lib/signright/bank";
 import { demoCase, type DemoKey } from "@/lib/signright/fixtures";
 import { getCase, newCase, rerunCase, saveCase } from "@/lib/signright/store";
 import {
@@ -14,6 +15,7 @@ import {
   type EvidenceType,
   type InvestigationInput,
   type OperationType,
+  type SourceDocument,
 } from "@/lib/signright/types";
 
 export const Route = createFileRoute("/new")({
@@ -44,15 +46,37 @@ function NewInvestigation() {
   const navigate = useNavigate();
   const [f, setF] = useState<InvestigationInput>(blank);
   const [loaded, setLoaded] = useState<string>("");
+  const [sourceDocs, setSourceDocs] = useState<SourceDocument[]>([]);
+  const [bankMsg, setBankMsg] = useState<{ tone: "ok" | "warn"; text: string } | null>(null);
+  const [bankBusy, setBankBusy] = useState(false);
 
   useEffect(() => {
     if (id) {
       const c = getCase(id);
-      if (c) { setF(structuredClone(c.input)); setLoaded(`Editing ${c.input.company.name}`); }
+      if (c) { setF(structuredClone(c.input)); setLoaded(`Editing ${c.input.company.name}`); setSourceDocs(c.sourceDocuments ?? []); }
     }
   }, [id]);
 
   const set = (patch: Partial<InvestigationInput>) => setF((p) => ({ ...p, ...patch }));
+  /** Looks the company up in the (simulated) bank system and fills the "Bank records" section. */
+  const loadBank = async (cui: string, opts: { clearIfMissing: boolean }) => {
+    setBankBusy(true);
+    setBankMsg(null);
+    try {
+      const client = await fetchBankClient(cui);
+      if (client) {
+        setF((p) => applyBankRecords(p, client));
+        setBankMsg({ tone: "ok", text: `Bank records loaded for ${client.companyName}: ${client.representatives.length} representative(s), ${client.operators.length} operator(s).` });
+      } else {
+        if (opts.clearIfMissing) setF((p) => applyBankRecords(p, null));
+        setBankMsg({ tone: "warn", text: "This CUI is not a client of the bank (no records found). Enter the bank records manually if needed." });
+      }
+    } catch (e) {
+      setBankMsg({ tone: "warn", text: e instanceof Error ? e.message : "The bank system could not be reached. Enter the records manually." });
+    } finally {
+      setBankBusy(false);
+    }
+  };
   const load = (k: DemoKey, label: string) => { setF(demoCase(k)); setLoaded(label); toast.info(`${label} loaded — edit before running`); };
 
   const people = Array.from(
@@ -69,8 +93,8 @@ function NewInvestigation() {
       request: { ...f.request, submittedBy: f.request.submittedBy.filter((s) => people.some(([pid]) => pid === s)) },
     };
     let caseId: string = id ?? "";
-    if (id && getCase(id)) rerunCase(id, clean);
-    else { const c = newCase(clean); saveCase(c); caseId = c.id; }
+    if (id && getCase(id)) rerunCase(id, clean, sourceDocs);
+    else { const c = newCase(clean); saveCase(sourceDocs.length ? { ...c, sourceDocuments: sourceDocs } : c); caseId = c.id; }
     navigate({ to: "/investigation", search: { id: caseId } });
   };
 
@@ -88,7 +112,17 @@ function NewInvestigation() {
         }
       />
 
-      <DocumentExtractor current={f} onApply={(input, label) => { setF(input); setLoaded(label); toast.info(label); }} />
+      <DocumentExtractor
+        current={f}
+        processed={sourceDocs}
+        onApply={(input, label, docs) => {
+          setF(input);
+          setSourceDocs((prev) => [...prev.filter((p) => !docs.some((d) => d.name === p.name)), ...docs]);
+          setLoaded(label);
+          toast.info(label);
+          if (bankLookupAvailable() && input.company.cui.trim()) void loadBank(input.company.cui, { clearIfMissing: true });
+        }}
+      />
 
       <Card title="Company">
         <div className="grid gap-4 md:grid-cols-4">
@@ -134,7 +168,17 @@ function NewInvestigation() {
         )}
       </Card>
 
-      <Card title="Bank records">
+      <Card
+        title="Bank records"
+        actions={
+          <Btn variant="ghost" disabled={bankBusy || !bankLookupAvailable()} onClick={() => void loadBank(f.company.cui, { clearIfMissing: false })}>
+            <Database className="h-4 w-4" /> {bankBusy ? "Looking up…" : "Load from bank system (by CUI)"}
+          </Btn>
+        }
+      >
+        {bankMsg && (
+          <p className={`mb-4 rounded-md px-3 py-2 text-sm ${bankMsg.tone === "ok" ? "bg-pass-soft text-pass" : "bg-review-soft text-review"}`}>{bankMsg.text}</p>
+        )}
         <div className="grid gap-6 lg:grid-cols-2">
           <PersonList
             title="Registered legal representatives"

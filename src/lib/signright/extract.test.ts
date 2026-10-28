@@ -72,6 +72,18 @@ describe("document extraction", () => {
     expect(warnings.some((w) => w.includes("representation clause"))).toBe(true);
   });
 
+  it("does not warn about a missing end date, but keeps real notes such as conflicts between documents", () => {
+    const ex = extractionSchema.parse({
+      company: { name: "X SRL", cui: "RO1", registrationNumber: "J1/1/2020", documentDate: "2026-10-01" },
+      representationMode: "individual",
+      administrators: [{ name: "Ion Vasile", personId: "P-1", appointedOn: "2020-01-01", terminatedOn: null, quote: null }],
+      unknownFields: ["administrators[0].terminatedOn", "conflict: documents disagree on the administrators"],
+    });
+    const { warnings } = applyExtraction(blank(), ex);
+    expect(warnings.some((w) => w.includes("terminatedOn"))).toBe(false);
+    expect(warnings.some((w) => w.includes("documents disagree"))).toBe(true);
+  });
+
   it("extracted data feeds the same rules: Case C extraction + bank data reproduces the joint-representation alert", () => {
     const base = demoCase("C");
     const { input } = applyExtraction(base, extractionSchema.parse(caseC));

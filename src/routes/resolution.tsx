@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Copy, FileDown, CheckCircle2, BadgeCheck, RotateCcw, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/signright/AppShell";
+import { BankUpdatePanel } from "@/components/signright/BankUpdatePanel";
 import { CasePicker } from "@/components/signright/CasePicker";
 import { Btn, Card, StatusBadge, fmtDate } from "@/components/signright/ui";
 import { allMissingItems, personName } from "@/lib/signright/engine";
@@ -68,6 +69,7 @@ function Resolution() {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
+          <BankUpdatePanel c={c} />
           <Card title="Resolution report" actions={<StatusBadge status={result.overall} />}>
             <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
               <Row k="Company" v={input.company.name} />
@@ -95,6 +97,7 @@ function Resolution() {
 
             <h3 className="mt-5 mb-2 text-sm font-semibold">Evidence used</h3>
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {c.sourceDocuments && c.sourceDocuments.length > 0 && <li>Documents read by AI: {c.sourceDocuments.map((d) => d.name).join(", ")}</li>}
               <li>Company registration document dated {input.company.documentDate || "—"}</li>
               {input.mandate.reference && <li>Mandate {input.mandate.reference} ({input.mandate.date || "undated"})</li>}
               {input.request.evidence.map((e) => <li key={e}>{EVIDENCE_LABELS[e]}</li>)}

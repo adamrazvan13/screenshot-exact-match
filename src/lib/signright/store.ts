@@ -7,7 +7,7 @@ import { demoCase, extraCases } from "./fixtures";
 import { generateScenarios } from "./generator";
 import { buildCustomerMessage } from "./message";
 import { deleteAllRemoteCases, fetchRemoteCases, insertAuditEvents, remoteEnabled, upsertRemoteCases } from "./remote";
-import type { CaseRecord, InvestigationInput } from "./types";
+import type { BankRepresentative, CaseRecord, InvestigationInput, SourceDocument } from "./types";
 
 const KEY = "signright.cases.v1";
 const listeners = new Set<() => void>();
@@ -177,15 +177,38 @@ export function updateCase(id: string, patch: Partial<CaseRecord>, logText?: str
 }
 
 /** Re-run engine on edited input, keeping notes/log history. */
-export function rerunCase(id: string, input: InvestigationInput) {
+export function rerunCase(id: string, input: InvestigationInput, sourceDocuments?: SourceDocument[]) {
   const c = getCase(id);
-  const fresh = newCase(input, id);
+  const docs = sourceDocuments ?? c?.sourceDocuments;
+  const fresh = { ...newCase(input, id), ...(docs?.length ? { sourceDocuments: docs } : {}) };
   if (!c) return saveCase(fresh);
   saveCase({
     ...fresh,
     createdAt: c.createdAt,
     notes: c.notes,
     log: [...c.log, ...fresh.log],
+  });
+}
+
+/**
+ * Employee-approved bank update: registers the given people as legal representatives in this case's bank
+ * records, re-runs the rules and writes the change to the activity log (and the database audit trail).
+ */
+export function registerRepresentatives(id: string, people: BankRepresentative[]) {
+  const c = getCase(id);
+  if (!c) return;
+  const known = new Set(c.input.bankRepresentatives.map((b) => b.personId));
+  const added = people.filter((p) => !known.has(p.personId)).map(({ personId, name }) => ({ personId, name }));
+  if (added.length === 0) return;
+  const input: InvestigationInput = { ...c.input, bankRepresentatives: [...c.input.bankRepresentatives, ...added] };
+  const fresh = newCase(input, id);
+  const text = `Bank records updated after document review: registered ${added.map((p) => `${p.name} (${p.personId})`).join(", ")} as legal representative${added.length > 1 ? "s" : ""}.`;
+  saveCase({
+    ...fresh,
+    ...(c.sourceDocuments?.length ? { sourceDocuments: c.sourceDocuments } : {}),
+    createdAt: c.createdAt,
+    notes: c.notes,
+    log: [...c.log, { at: new Date().toISOString(), text }, ...fresh.log],
   });
 }
 

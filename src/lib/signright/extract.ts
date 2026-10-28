@@ -93,7 +93,10 @@ export function applyExtraction(current: InvestigationInput, ex: Extraction): Ap
     });
     summary.push(`Administrators: ${ex.administrators.map((a) => a.name).join(", ")}`);
   }
-  for (const f of ex.unknownFields) warnings.push(`Not found in document: ${f}`);
+  // An empty end date just means the administrator is still in office, and company / mode / ID gaps
+  // are already reported above, so only the remaining notes (e.g. conflicts between documents) are shown.
+  const alreadyCovered = /terminatedOn|^company\.|^representationMode|personId/i;
+  for (const f of ex.unknownFields) if (!alreadyCovered.test(f)) warnings.push(`Not found or unclear in document: ${f}`);
 
   // A new document may change the CUI, so any earlier public-registry lookup is discarded.
   return { input: { ...current, company, representationMode, administrators, registryCheck: undefined }, warnings, summary };
@@ -104,7 +107,7 @@ export class ExtractionUnavailableError extends Error {}
 /** Same public Supabase config as the database; AI secrets stay in the Edge Function. */
 export const aiConfig = supabaseConfig;
 
-export async function extractFromText(documentText: string, signal?: AbortSignal): Promise<Extraction> {
+async function callExtract(payload: { text?: string; pdfs?: string[] }, signal?: AbortSignal): Promise<Extraction> {
   const cfg = aiConfig();
   if (!cfg)
     throw new ExtractionUnavailableError(
@@ -115,7 +118,7 @@ export async function extractFromText(documentText: string, signal?: AbortSignal
     res = await fetch(`${cfg.url}/functions/v1/extract-document`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: cfg.key, Authorization: `Bearer ${cfg.key}` },
-      body: JSON.stringify({ text: documentText }),
+      body: JSON.stringify(payload),
       ...(signal ? { signal } : {}),
     });
   } catch {
@@ -129,4 +132,32 @@ export async function extractFromText(documentText: string, signal?: AbortSignal
   const parsed = extractionSchema.safeParse(body);
   if (!parsed.success) throw new Error("The AI response did not match the expected format. Enter the data manually.");
   return parsed.data;
+}
+
+export function extractFromText(documentText: string, signal?: AbortSignal): Promise<Extraction> {
+  return callExtract({ text: documentText }, signal);
+}
+
+/** Max PDF size accepted by the model service (kept below the 4.5 MB provider limit). */
+export const MAX_PDF_BYTES = 4 * 1024 * 1024;
+
+/** Reads a PDF (scanned or digital) with the AI: the file is sent as base64 and read by the model itself. */
+export function extractFromPdf(pdfBase64: string, signal?: AbortSignal): Promise<Extraction> {
+  return callExtract({ pdfs: [pdfBase64] }, signal);
+}
+
+export const MAX_FILES = 5;
+export const MAX_TOTAL_PDF_BYTES = 12 * 1024 * 1024;
+
+/** Reads several documents together (PDFs and/or pasted text) in one AI request. */
+export function extractFromDocuments(input: { text?: string; pdfs?: string[] }, signal?: AbortSignal): Promise<Extraction> {
+  return callExtract(input, signal);
+}
+
+/** File -> base64 (no data: prefix). */
+export async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
 }

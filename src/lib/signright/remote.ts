@@ -1,6 +1,6 @@
 // Thin REST client for the Supabase database (PostgREST). No extra dependencies.
 import { supabaseConfig, type SupabaseConfig } from "./config";
-import type { ActivityEntry, CaseRecord } from "./types";
+import type { AccountOperator, ActivityEntry, BankRepresentative, CaseRecord, Mandate } from "./types";
 
 export const remoteEnabled = () => supabaseConfig() !== null;
 
@@ -57,4 +57,18 @@ export async function insertAuditEvents(caseId: string, entries: ActivityEntry[]
   if (entries.length === 0) return;
   const rows = entries.map((e) => ({ case_id: caseId, at: e.at, text: e.text }));
   await call("audit_events", { method: "POST", body: JSON.stringify(rows), prefer: "return=minimal" });
+}
+
+/** One row of the simulated bank system (table `bank_clients`), looked up by CUI digits. */
+export interface BankClientRow {
+  cui: string;
+  company_name: string;
+  representatives: BankRepresentative[] | null;
+  operators: AccountOperator[] | null;
+  mandate: Mandate | null;
+}
+
+export async function fetchBankClientRow(cuiKey: string): Promise<BankClientRow | null> {
+  const rows = (await (await call(`bank_clients?cui=eq.${encodeURIComponent(cuiKey)}&select=*&limit=1`)).json()) as BankClientRow[];
+  return rows[0] ?? null;
 }

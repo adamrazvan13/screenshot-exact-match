@@ -116,6 +116,12 @@ export interface ActivityEntry {
   text: string;
 }
 
+/** A document the AI read for this case (only name and size are kept; the file itself is never stored). */
+export interface SourceDocument {
+  name: string;
+  size: number;
+}
+
 export interface CaseRecord {
   id: string;
   createdAt: string;
@@ -129,6 +135,8 @@ export interface CaseRecord {
   messageApproved: boolean;
   notes: string;
   log: ActivityEntry[];
+  /** Documents already read for this case, so editing it does not require uploading them again. */
+  sourceDocuments?: SourceDocument[] | undefined;
 }
 
 export const OPERATION_LABELS: Record<OperationType, string> = {

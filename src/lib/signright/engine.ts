@@ -63,6 +63,12 @@ export function jointRequirement(input: InvestigationInput, now: Date) {
   return { group, missing, hasEvidence, satisfied: missing.length === 0 || hasEvidence };
 }
 
+/** Active official administrators the bank has not registered yet: exactly what a "register representatives" request is meant to fix. */
+export function unregisteredAdministrators(input: InvestigationInput, now: Date = new Date()) {
+  const bankIds = new Set(input.bankRepresentatives.map((b) => b.personId));
+  return input.administrators.filter((a) => isActive(a.terminatedOn, now) && !bankIds.has(a.personId));
+}
+
 function rule1(input: InvestigationInput, now: Date): RuleResult {
   const active = input.administrators.filter((a) => isActive(a.terminatedOn, now));
   const terminated = input.administrators.filter((a) => !isActive(a.terminatedOn, now));
@@ -127,7 +133,9 @@ function rule1(input: InvestigationInput, now: Date): RuleResult {
         ? "No action required."
         : outdated.length || additional.length
           ? "Suspend reliance on outdated representatives and request current registry documentation."
-          : "Verify the administrator update and register the missing representative(s) after document review.",
+          : input.request.operation === "update_representatives" && missing.length && !nameMismatch.length
+            ? "This is the change the customer asked for: review the appointment documents, then approve the bank update (Proposed bank update)."
+            : "Verify the administrator update and register the missing representative(s) after document review.",
     missingItems,
   };
 }

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClipboardCheck, Pencil, RefreshCw, Cpu } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/signright/AppShell";
+import { BankUpdatePanel } from "@/components/signright/BankUpdatePanel";
 import { CasePicker } from "@/components/signright/CasePicker";
 import { Btn, Card, StatusBadge, fmtDate } from "@/components/signright/ui";
 import { rerunCase, useCases } from "@/lib/signright/store";
@@ -62,6 +63,7 @@ function Investigation() {
           <Cpu className="h-4 w-4" /> Verdict from fixed, auditable rules — AI only reads documents, it never decides.
         </div>
       </div>
+      <BankUpdatePanel c={c} />
       {result.overall === "PASS" && (
         <div className="rounded-lg border border-pass/30 bg-pass-soft p-4 text-sm text-pass">No discrepancies detected in the available data.</div>
       )}
