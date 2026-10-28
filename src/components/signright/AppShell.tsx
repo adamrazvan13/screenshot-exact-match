@@ -1,11 +1,19 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { FileSearch, LayoutDashboard, FilePlus2, ClipboardCheck, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
-import { useCases } from "@/lib/signright/store";
+import { useCases, useSyncStatus, type SyncStatus } from "@/lib/signright/store";
+
+const SYNC_LABEL: Record<SyncStatus, { text: string; dot: string }> = {
+  local: { text: "Saved in this browser only", dot: "bg-muted-foreground" },
+  syncing: { text: "Saving to database…", dot: "bg-review" },
+  synced: { text: "Saved in database", dot: "bg-pass" },
+  offline: { text: "Database unreachable — saved locally", dot: "bg-conflict" },
+};
 
 export function AppShell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const cases = useCases();
+  const sync = SYNC_LABEL[useSyncStatus()];
   const latest = cases[0]?.id;
   const items = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -45,6 +53,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
         <div className="border-t border-sidebar-border p-4 text-[11px] leading-relaxed text-sidebar-foreground/60">
           <p className="font-medium text-sidebar-primary">The right person. The right authority. The right documents.</p>
+          <p className="mb-2 flex items-center gap-2 text-sidebar-foreground/80">
+            <span className={`h-2 w-2 rounded-full ${sync.dot}`} /> {sync.text}
+          </p>
           <p className="mt-2">Hackathon prototype · synthetic data only · not affiliated with any bank.</p>
         </div>
       </aside>

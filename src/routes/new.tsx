@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Play } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/signright/AppShell";
+import { DocumentExtractor } from "@/components/signright/DocumentExtractor";
 import { Btn, Card, Field } from "@/components/signright/ui";
 import { demoCase, type DemoKey } from "@/lib/signright/fixtures";
 import { getCase, newCase, rerunCase, saveCase } from "@/lib/signright/store";
@@ -85,6 +86,8 @@ function NewInvestigation() {
           </>
         }
       />
+
+      <DocumentExtractor current={f} onApply={(input, label) => { setF(input); setLoaded(label); toast.info(label); }} />
 
       <Card title="Company">
         <div className="grid gap-4 md:grid-cols-4">

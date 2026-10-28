@@ -102,6 +102,8 @@ export interface ActivityEntry {
 export interface CaseRecord {
   id: string;
   createdAt: string;
+  /** Last modification time; used to reconcile the local copy with the database. */
+  updatedAt?: string;
   input: InvestigationInput;
   result: InvestigationResult;
   reviewed: boolean;
