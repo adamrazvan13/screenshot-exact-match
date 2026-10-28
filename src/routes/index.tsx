@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FilePlus2, FolderOpen, AlertTriangle, ListChecks, CheckCheck, RotateCcw } from "lucide-react";
+import { Shuffle, FilePlus2, FolderOpen, AlertTriangle, ListChecks, CheckCheck, RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/signright/AppShell";
 import { Btn, Card, StatusBadge, fmtDate } from "@/components/signright/ui";
 import type { CaseRecord } from "@/lib/signright/types";
-import { resetDemoData, useCases } from "@/lib/signright/store";
+import { addGeneratedCases, resetDemoData, useCases } from "@/lib/signright/store";
 import { OPERATION_LABELS } from "@/lib/signright/types";
 import { toast } from "sonner";
 
@@ -39,6 +39,9 @@ function Dashboard() {
         subtitle="Automated rule-based investigation · synthetic Romanian SRL data"
         actions={
           <>
+            <Btn variant="ghost" onClick={() => { const n = addGeneratedCases(10); toast.success(`${n} synthetic cases generated`); }}>
+              <Shuffle className="h-4 w-4" /> Generate 10 synthetic cases
+            </Btn>
             <Btn variant="ghost" onClick={() => { resetDemoData(); toast.success("Demo data reset"); }}>
               <RotateCcw className="h-4 w-4" /> Reset demo data
             </Btn>

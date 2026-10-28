@@ -7,6 +7,7 @@ import {
   type InvestigationInput,
   type InvestigationResult,
   type OperationType,
+  type RegistryCheck,
   type RuleResult,
   type RuleStatus,
 } from "./types";
@@ -433,6 +434,79 @@ function rule6(input: InvestigationInput, now: Date): RuleResult {
   };
 }
 
+/** Compare names/numbers ignoring case, diacritics, spacing and punctuation ("S.R.L." = "SRL"). */
+export function normId(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+/** R7 — compares the entered company data with a public registry lookup (ANAF). Runs only when a lookup exists. */
+function rule7(input: InvestigationInput, check: RegistryCheck): RuleResult {
+  const supporting = [
+    `Source: ${check.source} public registry, checked ${check.checkedAt.slice(0, 16).replace("T", " ")} UTC`,
+    `CUI looked up: ${check.cui}`,
+  ];
+  if (!check.found) {
+    return {
+      id: "R7",
+      title: "Public registry check",
+      status: "REVIEW",
+      explanation: `CUI ${check.cui} was not found in the ${check.source} public registry.`,
+      supportingData: supporting,
+      nextStep: "Check the CUI for typing errors; if it is correct, request registry documentation from the customer.",
+      missingItems: ["Confirmation of a valid CUI"],
+    };
+  }
+  supporting.push(
+    `Registry name: ${check.name ?? "n/a"}`,
+    `Registry number: ${check.registrationNumber ?? "n/a"}`,
+    `Registration status: ${check.registrationStatus ?? "n/a"}`,
+    `Declared inactive: ${check.inactive === undefined ? "n/a" : check.inactive ? "yes" : "no"}`,
+  );
+  if (check.address) supporting.push(`Registered address: ${check.address}`);
+
+  const issues: string[] = [];
+  const statuses: RuleStatus[] = [];
+  const enteredCui = input.company.cui.replace(/\D/g, "");
+  if (enteredCui && enteredCui !== check.cui) {
+    statuses.push("REVIEW");
+    issues.push(`The registry lookup was made for CUI ${check.cui}, but the case has CUI ${input.company.cui}. Run the lookup again.`);
+  }
+  if (input.company.name.trim() && check.name && normId(input.company.name) !== normId(check.name)) {
+    statuses.push("REVIEW");
+    issues.push(`Company name differs: entered "${input.company.name}", public registry "${check.name}".`);
+  }
+  if (input.company.registrationNumber.trim() && check.registrationNumber && normId(input.company.registrationNumber) !== normId(check.registrationNumber)) {
+    statuses.push("REVIEW");
+    issues.push(`Registration number differs: entered "${input.company.registrationNumber}", public registry "${check.registrationNumber}".`);
+  }
+  if (check.inactive === true) {
+    statuses.push("CONFLICT");
+    issues.push("The company is declared inactive in the public registry.");
+  }
+  const st = check.registrationStatus ?? "";
+  if (/radier|radiat/i.test(st)) {
+    statuses.push("CONFLICT");
+    issues.push(`The public registry shows the company as struck off ("${st}").`);
+  } else if (/dizolv|lichid|insolv|suspend/i.test(st)) {
+    statuses.push("REVIEW");
+    issues.push(`The public registry shows a special status: "${st}".`);
+  }
+  const status = worst(statuses);
+  return {
+    id: "R7",
+    title: "Public registry check",
+    status,
+    explanation: issues.length ? issues.join(" ") : "The entered company data matches the public registry and the company is active.",
+    supportingData: supporting,
+    nextStep: status === "PASS" ? "No action required." : "Clarify the discrepancy with the customer and verify the company's current status before processing.",
+    missingItems: [],
+  };
+}
+
 export function runInvestigation(
   input: InvestigationInput,
   now: Date = new Date(),
@@ -440,6 +514,7 @@ export function runInvestigation(
 ): InvestigationResult {
   const r1 = rule1(input, now);
   const rules = [r1, rule2(input, now), rule3(input, now), rule4(input, now, policy), rule5(input, now, r1), rule6(input, now)];
+  if (input.registryCheck) rules.push(rule7(input, input.registryCheck));
   return {
     ranAt: now.toISOString(),
     overall: worst(rules.map((r) => r.status)),

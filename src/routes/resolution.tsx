@@ -98,6 +98,7 @@ function Resolution() {
               <li>Company registration document dated {input.company.documentDate || "—"}</li>
               {input.mandate.reference && <li>Mandate {input.mandate.reference} ({input.mandate.date || "undated"})</li>}
               {input.request.evidence.map((e) => <li key={e}>{EVIDENCE_LABELS[e]}</li>)}
+              {input.registryCheck && <li>Public registry ({input.registryCheck.source}) lookup for CUI {input.registryCheck.cui}, {input.registryCheck.found ? "company found" : "not found"}</li>}
               <li>{input.administrators.length} official administrator record(s), {input.bankRepresentatives.length} bank representative(s), {input.accountOperators.length} account operator(s)</li>
             </ul>
 

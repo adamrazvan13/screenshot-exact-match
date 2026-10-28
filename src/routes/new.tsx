@@ -4,6 +4,7 @@ import { Plus, Trash2, Play } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/signright/AppShell";
 import { DocumentExtractor } from "@/components/signright/DocumentExtractor";
+import { RegistryLookup } from "@/components/signright/RegistryLookup";
 import { Btn, Card, Field } from "@/components/signright/ui";
 import { demoCase, type DemoKey } from "@/lib/signright/fixtures";
 import { getCase, newCase, rerunCase, saveCase } from "@/lib/signright/store";
@@ -92,10 +93,11 @@ function NewInvestigation() {
       <Card title="Company">
         <div className="grid gap-4 md:grid-cols-4">
           <Field label="Company name"><input className="field" value={f.company.name} onChange={(e) => set({ company: { ...f.company, name: e.target.value } })} /></Field>
-          <Field label="CUI"><input className="field font-mono" value={f.company.cui} onChange={(e) => set({ company: { ...f.company, cui: e.target.value } })} /></Field>
+          <Field label="CUI"><input className="field font-mono" value={f.company.cui} onChange={(e) => set({ company: { ...f.company, cui: e.target.value }, registryCheck: undefined })} /></Field>
           <Field label="Registration number"><input className="field font-mono" value={f.company.registrationNumber} onChange={(e) => set({ company: { ...f.company, registrationNumber: e.target.value } })} /></Field>
           <Field label="Company document date"><input type="date" className="field" value={f.company.documentDate} onChange={(e) => set({ company: { ...f.company, documentDate: e.target.value } })} /></Field>
         </div>
+        <RegistryLookup input={f} onChange={set} />
       </Card>
 
       <Card

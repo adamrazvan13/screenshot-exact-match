@@ -62,7 +62,24 @@ export interface OperationRequest {
   evidence: EvidenceType[];
 }
 
+/** Result of a lookup in a public registry (ANAF) for the company's CUI. Optional: rule R7 only runs when present. */
+export interface RegistryCheck {
+  source: "ANAF";
+  checkedAt: string;
+  /** The CUI that was looked up (digits only). */
+  cui: string;
+  found: boolean;
+  name?: string | undefined;
+  registrationNumber?: string | undefined;
+  address?: string | undefined;
+  registrationStatus?: string | undefined;
+  inactive?: boolean | undefined;
+  vatRegistered?: boolean | undefined;
+}
+
 export interface InvestigationInput {
+  /** Public registry lookup result (ANAF), if the employee ran it. */
+  registryCheck?: RegistryCheck | undefined;
   company: Company;
   representationMode: RepresentationMode;
   administrators: Administrator[];

@@ -4,6 +4,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { runInvestigation } from "./engine";
 import { demoCase, extraCases } from "./fixtures";
+import { generateScenarios } from "./generator";
 import { buildCustomerMessage } from "./message";
 import { deleteAllRemoteCases, fetchRemoteCases, insertAuditEvents, remoteEnabled, upsertRemoteCases } from "./remote";
 import type { CaseRecord, InvestigationInput } from "./types";
@@ -186,6 +187,14 @@ export function rerunCase(id: string, input: InvestigationInput) {
     notes: c.notes,
     log: [...c.log, ...fresh.log],
   });
+}
+
+/** Adds `count` freshly generated synthetic cases; each is evaluated by the real rule engine. */
+export function addGeneratedCases(count: number) {
+  const now = new Date().toISOString();
+  const fresh = generateScenarios(count).map((input) => ({ ...newCase(input), updatedAt: now }));
+  write([...fresh, ...read()]);
+  return fresh.length;
 }
 
 export function resetDemoData() {

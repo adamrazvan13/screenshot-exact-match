@@ -95,7 +95,8 @@ export function applyExtraction(current: InvestigationInput, ex: Extraction): Ap
   }
   for (const f of ex.unknownFields) warnings.push(`Not found in document: ${f}`);
 
-  return { input: { ...current, company, representationMode, administrators }, warnings, summary };
+  // A new document may change the CUI, so any earlier public-registry lookup is discarded.
+  return { input: { ...current, company, representationMode, administrators, registryCheck: undefined }, warnings, summary };
 }
 
 export class ExtractionUnavailableError extends Error {}
