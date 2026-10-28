@@ -7,7 +7,6 @@ import { DocumentExtractor } from "@/components/signright/DocumentExtractor";
 import { RegistryLookup } from "@/components/signright/RegistryLookup";
 import { Btn, Card, Field } from "@/components/signright/ui";
 import { applyBankRecords, bankLookupAvailable, fetchBankClient } from "@/lib/signright/bank";
-import { demoCase, type DemoKey } from "@/lib/signright/fixtures";
 import { getCase, newCase, rerunCase, saveCase } from "@/lib/signright/store";
 import {
   EVIDENCE_LABELS,
@@ -77,7 +76,6 @@ function NewInvestigation() {
       setBankBusy(false);
     }
   };
-  const load = (k: DemoKey, label: string) => { setF(demoCase(k)); setLoaded(label); toast.info(`${label} loaded — edit before running`); };
 
   const people = Array.from(
     new Map([...f.administrators, ...f.bankRepresentatives, ...f.accountOperators].filter((p) => p.personId && p.name).map((p) => [p.personId, p.name])),
@@ -102,14 +100,7 @@ function NewInvestigation() {
     <div className="animate-fade-up space-y-5">
       <PageHeader
         title="New Investigation"
-        subtitle={loaded || "Enter case data manually or load a synthetic demo case."}
-        actions={
-          <>
-            <Btn onClick={() => load("A", "Case A — All Records Match")}>Load Case A — All Records Match</Btn>
-            <Btn onClick={() => load("B", "Case B — New Administrator Missing")}>Load Case B — New Administrator Missing from Bank Records</Btn>
-            <Btn onClick={() => load("C", "Case C — Joint Representation Conflict")}>Load Case C — Joint Representation Conflict</Btn>
-          </>
-        }
+        subtitle={loaded || "Enter case data manually or read it from registry documents."}
       />
 
       <DocumentExtractor

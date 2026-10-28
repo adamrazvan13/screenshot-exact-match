@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FileText, FileUp, Sparkles, AlertTriangle, X, UploadCloud, CheckCircle2 } from "lucide-react";
+import { FileUp, Sparkles, AlertTriangle, X, UploadCloud, CheckCircle2 } from "lucide-react";
 import { Btn, Card } from "@/components/signright/ui";
 import {
   aiConfig,
@@ -10,8 +10,6 @@ import {
   MAX_PDF_BYTES,
   MAX_TOTAL_PDF_BYTES,
 } from "@/lib/signright/extract";
-import type { DemoKey } from "@/lib/signright/fixtures";
-import { SAMPLE_DOCS } from "@/lib/signright/sampleDocs";
 import type { InvestigationInput, SourceDocument } from "@/lib/signright/types";
 
 interface Props {
@@ -167,13 +165,6 @@ export function DocumentExtractor({ current, processed = [], onApply }: Props) {
         </ul>
       )}
 
-      <div className="mb-2 flex flex-wrap gap-2">
-        {(Object.keys(SAMPLE_DOCS) as DemoKey[]).map((k) => (
-          <Btn key={k} variant="ghost" className="text-xs" onClick={() => setText(SAMPLE_DOCS[k].text)}>
-            <FileText className="h-3.5 w-3.5" /> Sample {k}: {SAMPLE_DOCS[k].title}
-          </Btn>
-        ))}
-      </div>
       <textarea
         className="field min-h-40 font-mono text-xs leading-relaxed"
         placeholder="…or paste the certificate text here"
