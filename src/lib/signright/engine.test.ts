@@ -14,7 +14,7 @@ describe("investigation engine", () => {
   it("Case B flags Maria Ionescu missing from bank records", () => {
     const r = runInvestigation(demoCase("B"));
     expect(status(r, "R1")).toBe("REVIEW");
-    expect(r.rules[0].explanation).toContain("Maria Ionescu");
+    expect(r.rules[0]!.explanation).toContain("Maria Ionescu");
   });
 
   it("Case C flags missing joint authorization", () => {

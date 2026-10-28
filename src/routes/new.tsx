@@ -15,7 +15,7 @@ import {
 } from "@/lib/signright/types";
 
 export const Route = createFileRoute("/new")({
-  validateSearch: (s: Record<string, unknown>) => ({ id: typeof s.id === "string" ? s.id : undefined }),
+  validateSearch: (s: Record<string, unknown>): { id?: string } => (typeof s["id"] === "string" ? { id: s["id"] } : {}),
   head: () => ({
     meta: [
       { title: "New Investigation — SignRight AI" },
@@ -58,7 +58,7 @@ function NewInvestigation() {
   );
 
   const run = () => {
-    if (!f.company.name.trim()) return toast.error("Company name is required");
+    if (!f.company.name.trim()) { toast.error("Company name is required"); return; }
     const clean: InvestigationInput = {
       ...f,
       administrators: f.administrators.filter((a) => a.name.trim()).map((a) => ({ ...a, appointedOn: a.appointedOn || undefined, terminatedOn: a.terminatedOn || undefined })),

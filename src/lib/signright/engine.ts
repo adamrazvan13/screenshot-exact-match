@@ -301,7 +301,7 @@ function rule3(input: InvestigationInput, now: Date): RuleResult {
 }
 
 function rule4(input: InvestigationInput, now: Date, policy: DemoPolicy): RuleResult {
-  const docs: { name: string; date?: string }[] = [
+  const docs: { name: string; date?: string | undefined }[] = [
     { name: "Company registration document", date: input.company.documentDate },
   ];
   if (input.mandate.reference || input.mandate.date)

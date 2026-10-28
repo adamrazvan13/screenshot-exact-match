@@ -8,7 +8,7 @@ import { rerunCase, useCases } from "@/lib/signright/store";
 import { OPERATION_LABELS } from "@/lib/signright/types";
 
 export const Route = createFileRoute("/investigation")({
-  validateSearch: (s: Record<string, unknown>) => ({ id: typeof s.id === "string" ? s.id : undefined }),
+  validateSearch: (s: Record<string, unknown>): { id?: string } => (typeof s["id"] === "string" ? { id: s["id"] } : {}),
   head: () => ({
     meta: [
       { title: "Investigation — SignRight AI" },

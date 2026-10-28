@@ -11,7 +11,7 @@ import { updateCase, useCases } from "@/lib/signright/store";
 import { EVIDENCE_LABELS, OPERATION_LABELS } from "@/lib/signright/types";
 
 export const Route = createFileRoute("/resolution")({
-  validateSearch: (s: Record<string, unknown>) => ({ id: typeof s.id === "string" ? s.id : undefined }),
+  validateSearch: (s: Record<string, unknown>): { id?: string } => (typeof s["id"] === "string" ? { id: s["id"] } : {}),
   head: () => ({
     meta: [
       { title: "Resolution Center — SignRight AI" },

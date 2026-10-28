@@ -28,8 +28,8 @@ export interface Company {
 export interface Administrator {
   personId: string;
   name: string;
-  appointedOn?: string;
-  terminatedOn?: string;
+  appointedOn?: string | undefined;
+  terminatedOn?: string | undefined;
   /** Part of the group that must act together under joint representation. */
   requiredForJoint?: boolean;
 }
@@ -50,15 +50,15 @@ export interface AccountOperator {
 export interface Mandate {
   reference: string;
   description: string;
-  date?: string;
+  date?: string | undefined;
 }
 
 export interface OperationRequest {
   operation: OperationType;
   submittedBy: string[]; // person IDs
   details: string;
-  targetPersonId?: string;
-  targetPersonName?: string;
+  targetPersonId?: string | undefined;
+  targetPersonName?: string | undefined;
   evidence: EvidenceType[];
 }
 
