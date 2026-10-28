@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture rules
+- Investigation logic lives in `src/lib/signright/engine.ts` as pure deterministic rules; UI never hardcodes outcomes — keeps results explainable and testable.
+- Case data persists in localStorage via `src/lib/signright/store.ts` (prototype; no backend yet) — swap the store module to move to a database later.

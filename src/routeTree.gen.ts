@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InvestigationRouteImport } from './routes/investigation'
+import { Route as NewRouteImport } from './routes/new'
+import { Route as ResolutionRouteImport } from './routes/resolution'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvestigationRoute = InvestigationRouteImport.update({
+  id: '/investigation',
+  path: '/investigation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewRoute = NewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResolutionRoute = ResolutionRouteImport.update({
+  id: '/resolution',
+  path: '/resolution',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/investigation': typeof InvestigationRoute
+  '/new': typeof NewRoute
+  '/resolution': typeof ResolutionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/investigation': typeof InvestigationRoute
+  '/new': typeof NewRoute
+  '/resolution': typeof ResolutionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/investigation': typeof InvestigationRoute
+  '/new': typeof NewRoute
+  '/resolution': typeof ResolutionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/investigation' | '/new' | '/resolution'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/investigation' | '/new' | '/resolution'
+  id: '__root__' | '/' | '/investigation' | '/new' | '/resolution'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InvestigationRoute: typeof InvestigationRoute
+  NewRoute: typeof NewRoute
+  ResolutionRoute: typeof ResolutionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/investigation': {
+      id: '/investigation'
+      path: '/investigation'
+      fullPath: '/investigation'
+      preLoaderRoute: typeof InvestigationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/new': {
+      id: '/new'
+      path: '/new'
+      fullPath: '/new'
+      preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resolution': {
+      id: '/resolution'
+      path: '/resolution'
+      fullPath: '/resolution'
+      preLoaderRoute: typeof ResolutionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InvestigationRoute: InvestigationRoute,
+  NewRoute: NewRoute,
+  ResolutionRoute: ResolutionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
