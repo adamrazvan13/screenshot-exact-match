@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileText, Sparkles, AlertTriangle } from "lucide-react";
 import { Btn, Card } from "@/components/signright/ui";
 import { aiConfig, applyExtraction, extractFromText } from "@/lib/signright/extract";
+import { readPdf } from "@/lib/signright/pdf";
 import type { DemoKey } from "@/lib/signright/fixtures";
 import { SAMPLE_DOCS } from "@/lib/signright/sampleDocs";
 import type { InvestigationInput } from "@/lib/signright/types";
@@ -17,6 +18,32 @@ export function DocumentExtractor({ current, onApply }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ summary: string[]; warnings: string[] } | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfName, setPdfName] = useState("");
+  const controller = useRef<AbortController | null>(null);
+  useEffect(() => () => controller.current?.abort(), []);
+  const upload = async (file: File) => {
+    const request = new AbortController();
+    controller.current = request;
+    setPdfBusy(true);
+    setError("");
+    setResult(null);
+    setPdfName("");
+    try {
+      const recognized = await readPdf(file, request.signal);
+      if (request.signal.aborted) return;
+      setText(recognized);
+      setPdfName(file.name);
+    } catch (e) {
+      if (!request.signal.aborted)
+        setError(e instanceof Error ? e.message : "PDF reading failed. Try again.");
+    } finally {
+      if (controller.current === request) {
+        controller.current = null;
+        setPdfBusy(false);
+      }
+    }
+  };
   const configured = aiConfig() !== null;
 
   const run = async () => {
@@ -38,15 +65,66 @@ export function DocumentExtractor({ current, onApply }: Props) {
   return (
     <Card
       title="Read a registry document with AI"
-      actions={<span className="text-xs text-muted-foreground">AI reads the document · fixed rules decide</span>}
+      actions={
+        <span className="text-xs text-muted-foreground">
+          AI reads the document · fixed rules decide
+        </span>
+      }
     >
       <p className="mb-3 text-sm text-muted-foreground">
-        Paste the text of a company registry certificate (synthetic). The AI proposes the company data, representation mode and
-        administrators; you review and correct them below. The AI never decides the outcome.
+        Upload a company registry PDF (digital or scanned), or paste its text (synthetic). The AI
+        proposes the company data, representation mode and administrators; you review and correct
+        them below. The AI never decides the outcome.
       </p>
+      <div className="mb-4 space-y-2 rounded-md border border-input p-3">
+        <label className="block text-sm font-medium" htmlFor="registry-pdf">
+          Upload PDF · OCR for scanned pages
+        </label>
+        <input
+          id="registry-pdf"
+          type="file"
+          accept=".pdf,application/pdf"
+          disabled={busy || pdfBusy || !configured}
+          className="block w-full text-sm"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file) void upload(file);
+          }}
+        />
+        <p className="text-xs text-muted-foreground">
+          Maximum 10 MB. PDF is sent to the AI provider for recognition; the original file is not
+          saved. Review the text below, then select Extract with AI.
+        </p>
+        {pdfBusy && (
+          <div role="status" className="text-sm">
+            Reading PDF and recognizing scanned text…
+            <Btn
+              type="button"
+              className="ml-2"
+              onClick={() => {
+                controller.current?.abort();
+              }}
+            >
+              Cancel
+            </Btn>
+          </div>
+        )}
+        {pdfName && (
+          <p role="status" className="text-sm">
+            Read: {pdfName}. Verify names, identifiers and dates against the original.
+          </p>
+        )}
+      </div>
       <div className="mb-2 flex flex-wrap gap-2">
         {(Object.keys(SAMPLE_DOCS) as DemoKey[]).map((k) => (
-          <Btn key={k} variant="ghost" className="text-xs" onClick={() => setText(SAMPLE_DOCS[k].text)}>
+          <Btn
+            key={k}
+            disabled={busy || pdfBusy}
+            variant="ghost"
+            className="text-xs"
+            onClick={() => setText(SAMPLE_DOCS[k].text)}
+          >
             <FileText className="h-3.5 w-3.5" /> Sample {k}: {SAMPLE_DOCS[k].title}
           </Btn>
         ))}
@@ -54,15 +132,24 @@ export function DocumentExtractor({ current, onApply }: Props) {
       <textarea
         className="field min-h-40 font-mono text-xs leading-relaxed"
         placeholder="Paste the certificate text here…"
+        aria-label="Document text to review"
+        disabled={busy || pdfBusy}
+        maxLength={60_000}
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
       <div className="mt-3 flex flex-wrap items-center gap-3">
-        <Btn variant="primary" disabled={busy || text.trim().length < 20 || !configured} onClick={run}>
+        <Btn
+          variant="primary"
+          disabled={busy || pdfBusy || text.trim().length < 20 || !configured}
+          onClick={run}
+        >
           <Sparkles className="h-4 w-4" /> {busy ? "Reading document…" : "Extract with AI"}
         </Btn>
         {!configured && (
-          <span className="text-xs text-muted-foreground">AI extraction is not configured yet — enter the data manually below.</span>
+          <span className="text-xs text-muted-foreground">
+            AI extraction is not configured yet — enter the data manually below.
+          </span>
         )}
       </div>
       {error && (
@@ -74,13 +161,17 @@ export function DocumentExtractor({ current, onApply }: Props) {
         <div className="mt-3 space-y-2 rounded-md bg-muted p-3 text-sm">
           <div className="font-medium">Extracted — please verify against the document:</div>
           <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
-            {result.summary.map((s) => <li key={s}>{s}</li>)}
+            {result.summary.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
           </ul>
           {result.warnings.length > 0 && (
             <>
               <div className="pt-1 font-medium text-review">Needs your attention:</div>
               <ul className="list-disc space-y-0.5 pl-5 text-review">
-                {result.warnings.map((w) => <li key={w}>{w}</li>)}
+                {result.warnings.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
               </ul>
             </>
           )}
