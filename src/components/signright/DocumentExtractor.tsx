@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FileText, Sparkles, AlertTriangle } from "lucide-react";
+import { FileText, Sparkles, AlertTriangle, Upload } from "lucide-react";
 import { Btn, Card } from "@/components/signright/ui";
 import { aiConfig, applyExtraction, extractFromText } from "@/lib/signright/extract";
 import { readPdf } from "@/lib/signright/pdf";
@@ -77,15 +77,36 @@ export function DocumentExtractor({ current, onApply }: Props) {
         them below. The AI never decides the outcome.
       </p>
       <div className="mb-4 space-y-2 rounded-md border border-input p-3">
-        <label className="block text-sm font-medium" htmlFor="registry-pdf">
-          Upload PDF · OCR for scanned pages
+        <span className="block text-sm font-medium">Upload PDF · OCR for scanned pages</span>
+        <label
+          htmlFor="registry-pdf"
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file && file.type === "application/pdf") void upload(file);
+          }}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed px-4 py-8 text-center transition-colors ${
+            dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50"
+          } ${busy || pdfBusy || !configured ? "pointer-events-none opacity-50" : ""}`}
+        >
+          <Upload className={`h-6 w-6 ${dragOver ? "text-primary" : "text-muted-foreground"}`} />
+          <span className="text-sm font-medium">
+            {pdfBusy ? "Reading PDF…" : "Choose a PDF file or drag it here"}
+          </span>
+          <span className="text-xs text-muted-foreground">PDF up to 10 MB · scanned pages are read with OCR</span>
         </label>
         <input
           id="registry-pdf"
           type="file"
           accept=".pdf,application/pdf"
           disabled={busy || pdfBusy || !configured}
-          className="block w-full text-sm"
+          className="sr-only"
           onChange={(e) => {
             const file = e.target.files?.[0];
             e.target.value = "";
