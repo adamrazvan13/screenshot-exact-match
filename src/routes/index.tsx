@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FilePlus2, FolderOpen, AlertTriangle, ListChecks, CheckCheck, RotateCcw } from "lucide-react";
 import { PageHeader } from "@/components/signright/AppShell";
-import { Btn, Card, StatusBadge } from "@/components/signright/ui";
+import { Btn, Card, StatusBadge, fmtDate } from "@/components/signright/ui";
+import type { CaseRecord } from "@/lib/signright/types";
 import { resetDemoData, useCases } from "@/lib/signright/store";
 import { OPERATION_LABELS } from "@/lib/signright/types";
 import { toast } from "sonner";
@@ -17,6 +18,11 @@ export const Route = createFileRoute("/")({
   }),
   component: Dashboard,
 });
+
+/** Time of the most recent "marked as reviewed" entry in the case's activity log. */
+function reviewedAt(c: CaseRecord): string | undefined {
+  return [...c.log].reverse().find((l) => l.text === "Case marked as reviewed.")?.at;
+}
 
 function Dashboard() {
   const cases = useCases();
@@ -76,7 +82,12 @@ function Dashboard() {
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2">
                     <StatusBadge status={c.result.overall} />
-                    {c.reviewed && <span className="text-xs text-muted-foreground">Reviewed</span>}
+                    {c.reviewed && (
+                      <span className="text-xs leading-tight text-muted-foreground">
+                        Reviewed
+                        {reviewedAt(c) && <><br />{fmtDate(reviewedAt(c)!)}</>}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td className="px-3 py-3 font-mono">{c.result.discrepancyCount}</td>
