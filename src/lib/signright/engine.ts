@@ -1,4 +1,4 @@
-// Deterministic, rule-based investigation engine. No AI / LLM involved.
+// Deterministic, rule-based investigation engine. No AI / LLM involved in verdicts.
 import {
   EVIDENCE_LABELS,
   OPERATION_LABELS,

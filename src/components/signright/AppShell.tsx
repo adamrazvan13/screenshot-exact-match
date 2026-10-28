@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const items = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
     { to: "/new", label: "New Investigation", icon: FilePlus2 },
-    { to: "/investigation", label: "AI Investigation", icon: FileSearch },
+    { to: "/investigation", label: "Investigation", icon: FileSearch },
     { to: "/resolution", label: "Resolution Center", icon: ClipboardCheck },
   ] as const;
 

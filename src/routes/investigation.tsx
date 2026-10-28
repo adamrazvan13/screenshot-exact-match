@@ -59,7 +59,7 @@ function Investigation() {
           <div className="text-sm">{fmtDate(result.ranAt)}</div>
         </div>
         <div className="ml-auto flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-          <Cpu className="h-4 w-4" /> Automated rule-based investigation — no AI model is used in this version.
+          <Cpu className="h-4 w-4" /> Verdict from fixed, auditable rules — AI only reads documents, it never decides.
         </div>
       </div>
       {result.overall === "PASS" && (
