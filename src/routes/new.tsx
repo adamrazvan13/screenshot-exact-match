@@ -66,7 +66,7 @@ function NewInvestigation() {
       accountOperators: f.accountOperators.filter((a) => a.name.trim()),
       request: { ...f.request, submittedBy: f.request.submittedBy.filter((s) => people.some(([pid]) => pid === s)) },
     };
-    let caseId = id;
+    let caseId: string = id ?? "";
     if (id && getCase(id)) rerunCase(id, clean);
     else { const c = newCase(clean); saveCase(c); caseId = c.id; }
     navigate({ to: "/investigation", search: { id: caseId } });
