@@ -360,10 +360,9 @@ function rule5(input: InvestigationInput, now: Date, r1: RuleResult): RuleResult
   }
 
   if (op === "update_representatives") {
-    if (r1.status === "PASS") {
-      statuses.push("REVIEW");
-      issues.push("An update of representatives was requested, but official and bank records already match.");
-    }
+    // Records already match: the requested update is satisfied, which is not a discrepancy.
+    if (r1.status === "PASS")
+      supporting.push("Official and bank representative records already match; no further update is needed.");
   } else if (r1.status !== "PASS") {
     statuses.push("REVIEW");
     issues.push(`Representative records are out of sync, yet the request is "${OPERATION_LABELS[op]}" rather than a representative update.`);
